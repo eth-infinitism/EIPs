@@ -105,7 +105,7 @@ For example, an account that is operated by multiple participants simultaneously
 to coordinate their transactions to avoid invalidating each other.
 
 Another example when this can also be a limitation is a case where there are separate execution flows.
-A configuration change may require multiple participants to co-sing a transaction but a regular operation does not.
+A configuration change may require multiple participants to co-sign a transaction but a regular operation does not.
 With sequential nonces, all operations will have to be halted until the configuration change is executed.
 
 To address it we propose an introduction of a separate 2-dimensional nonce used when contracts initiate a transaction.
