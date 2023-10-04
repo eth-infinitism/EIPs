@@ -376,6 +376,7 @@ On the execution layer, the transaction validity conditions for a block are exte
 ```
 
 func validateAccountAbstractionTransaction(tx *Transaction) {
+    assert !(sender.code.length > 0 && deployerData.length > 0)
 
     if (sender.code.length == 0 && deployerData.length == 0) {
         validUntil = (nonce >> 112) & 0xffffffffffff
