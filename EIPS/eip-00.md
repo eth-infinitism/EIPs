@@ -717,6 +717,10 @@ As mentioned earlier, the `sender` and `paymaster` contracts should not revert o
 and should return a value different from `MAGIC_VALUE_SENDER` or `MAGIC_VALUE_PAYMASTER` accordingly
 in order to enable gas estimation.
 
+One acceptable way to achieve this behavior for Smart Contract Accounts is to compare the `signature` parameter to
+a predetermined "dummy signature" and to return without reverting in case the values match.
+This will not result in transaction being authorized as long as returned value does not include `MAGIC_VALUE_SENDER`.
+
 ## Rationale
 
 ### Using Solidity method selectors in a Core EIP
