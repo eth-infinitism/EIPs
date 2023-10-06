@@ -287,8 +287,10 @@ function validateTransaction(uint256 version, bytes32 txHash, bytes transaction)
 
 ```
 
-The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed`.
-The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.
+The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed`.\
+The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
+The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
+[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).\
 The `version` parameter is added in order to maintain the Solidity method ID in case of changes to this struct
 in future revisions of this EIP.
 
@@ -322,7 +324,9 @@ The gas limit of this frame is set to `paymasterGasLimit`.
 
 The amount of gas used by this frame is referred to as `paymasterValidationGasUsed`.
 
-The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.
+The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
+The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
+[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).\
 
 The frame must return a bytes array that is interpreted as:
 
@@ -532,6 +536,10 @@ keccak256(AA_TX_TYPE || 0x00 || rlp(transaction_payload)
 
 Note that the `chainId` and `accessList` parameters are included in the transaction hash calculation but are not
 available on-chain as part of the `TransactionType4` struct.
+
+In order to calculate the transaction hash that will be used during the signing of the transaction and validation of
+the transaction signature by the `sender`, the value of the `signature` parameter is considered to be an empty
+byte array.
 
 ### Accepting EOA account as `sender` to achieve native gas abstraction
 
