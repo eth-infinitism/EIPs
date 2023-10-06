@@ -212,6 +212,7 @@ When processing a transaction of type `AA_TX_TYPE`, however, multiple execution 
 The full list of possible frames tries to replicate the ERC-4337 flow:
 
 1. Validation Phase
+   * `nonce` validation and increment frame (required)
    * `sender` deployment frame (once per account)
    * `sender` validation frame (required)
    * `paymaster` validation frame (optional)
