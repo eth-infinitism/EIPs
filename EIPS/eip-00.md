@@ -17,7 +17,8 @@ Combining the [EIP-2938](./eip-2938)
 and [ERC-4337](./eip-4337)
 into a comprehensive Native Account Abstraction proposal.
 
-We propose splitting the Ethereum transaction scope into multiple steps: validations, execution, and cleanup.
+We propose splitting the Ethereum transaction scope into multiple steps: validations, execution,
+and post-transaction logic.
 Transaction validity is determined by the result of the validation steps of a transaction.
 
 We further separate transaction validation for the purposes of authorization and the gas fee payment,
@@ -355,7 +356,8 @@ The `postPaymasterTransaction` may still be called with a `success: false` flag.
 
 #### Paymaster post-transaction frame
 
-After the sender execution frame is over the `paymaster` may need to perform some kind of cleanup or bookkeeping.
+After the sender execution frame is over the `paymaster` may need to perform some post-transaction logic,
+for instance to perform some kind of cleanup or bookkeeping.
 If the gas payment validation returned a non-zero `context`, the `paymaster` is invoked again
 with the following inputs:
 
@@ -602,7 +604,7 @@ for txIndex := 0; txIndex < range block.Transactions.Len(); txIndex++ {
         txIndex := j // transaction executed - no need to revisit in the outer loop
 
 
-        // 5. Run cleanups if necessary
+        // 5. Run paymaster's post-transaction logic if necessary
         if (context[j].Len() == 0){
           continue
         }
