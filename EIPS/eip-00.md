@@ -759,9 +759,6 @@ the ABI of the `paymaster` and `sender` contracts. This adapter can be set as a 
 The `sender` contracts MAY support both ERC-4337 and `AA_TX_TYPE` transactions during a transition period,
 as long as this EIP may be adopted by some chains and not by others.
 
-The participating RPC nodes MAY be able to handle the `eth_sendUserOperation` call and
-convert it into an `eth_sendTransaction` call if necessary.
-
 ## Security Considerations
 
 This EIP creates a complex and sophisticated mechanism and aims to expand the usage of Smart Contract Accounts.
