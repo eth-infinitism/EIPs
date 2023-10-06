@@ -706,6 +706,9 @@ If any of the frames reverts the call returns the revert data of each reverted f
 
 Accepts Transaction Type `AA_TX_TYPE` with fields `validationGasLimit`, `paymasterGasLimit`, `callGasLimit` optional.
 
+Optionally accepts the State Override Set to allow users to modify the state during the gas estimation.
+This field as well as its behavior is equivalent to the ones defined for `eth_call` RPC method.
+
 Returns `{validationGasLimit, paymasterGasLimit, callGasLimit, builderFee}` object.
 
 Note that the `deployerData` and `paymasterData` fields are required for a consistent result.
