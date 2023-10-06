@@ -369,6 +369,13 @@ Revert in the `postPaymasterTransaction` frame reverts the transaction's executi
 The validation frames do not revert if the `postPaymasterTransaction` frame reverts.
 The gas fees charged from the `paymaster` will still include the gas cost of the reverted execution frame.
 
+### Execution flow diagram
+
+The execution flow determined by an Account Abstraction Transaction is visualised by the following flow diagram:
+
+![](../assets/eip-00/flow_diagram.png)
+*Execution flow for the Native Account Abstraction Transactions*
+
 ### Execution layer transaction validation
 
 On the execution layer, the transaction validity conditions for a block are extended as follows:
@@ -463,6 +470,20 @@ certain rules for the mempool transactions in EIP-9999.
 A builder that chooses not to enforce the rules from EIP-9999 **must** take care to re-validate each transaction
 against the mid-block state at the position where it is being included into a block.
 Otherwise, the resulting block is likely to end up being invalid.
+
+### Block structure diagram
+
+Here is a visual representation of a block that contains multiple Account Abstraction Transactions.
+The validation parts of AA transactions are executed in a separate position in a block, but are not considered
+to be separate a transaction:
+
+![](../assets/eip-00/block_overview.png)
+*The structure of a block containing multiple Native Account Abstraction Transactions*
+
+Zooming into a single transaction, the validation part of an AA transaction may include multiple exectution frames:
+
+![](../assets/eip-00/zoom_into_transaction.png)
+*Frames within a single Native Account Abstraction Transaction within a block*
 
 ### Validation state change virtual transactions
 
