@@ -348,7 +348,9 @@ The size of the `context` byte array may not exceed `MAX_CONTEXT_SIZE` for a tra
 
 The `sender` address is invoked with `callData` input.
 
-The gas limit of this frame is set to `callGasLimit`.
+The gas limit of this frame is set to `callGasLimit - calldataCost`.\
+Calculation of the `calldataCost` value is defined in the
+[Gas fees charged for transaction input](#gas-fees-charged-for-transaction-input) section.\
 The amount of gas used by this frame is referred to as `gasUsedByExecution`.
 
 The validation frames do not revert if the execution frame reverts.
@@ -481,8 +483,8 @@ Otherwise, the resulting block is likely to end up being invalid.
 ### Block structure diagram
 
 Here is a visual representation of a block that contains multiple Account Abstraction Transactions.
-The validation parts of AA transactions are executed in a separate position in a block, but are not considered
-to be separate a transaction:
+The validation parts of AA transactions are executed as separate transactions,
+but are not represented as separate transactions in the block data.
 
 ![](../assets/eip-00/block_overview.png)
 *The structure of a block containing multiple Native Account Abstraction Transactions*
