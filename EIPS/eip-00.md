@@ -328,7 +328,7 @@ The amount of gas used by this frame is referred to as `paymasterValidationGasUs
 
 The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
 The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
-[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).\
+[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).
 
 The frame must return a bytes array that is interpreted as:
 
