@@ -17,7 +17,8 @@ Combining the [EIP-2938](./eip-2938)
 and [ERC-4337](./eip-4337)
 into a comprehensive Native Account Abstraction proposal.
 
-We propose splitting the Ethereum transaction scope into multiple steps: validations, execution, and cleanup.
+We propose splitting the Ethereum transaction scope into multiple steps: validations, execution,
+and post-transaction logic.
 Transaction validity is determined by the result of the validation steps of a transaction.
 
 We further separate transaction validation for the purposes of authorization and the gas fee payment,
@@ -212,6 +213,7 @@ When processing a transaction of type `AA_TX_TYPE`, however, multiple execution 
 The full list of possible frames tries to replicate the ERC-4337 flow:
 
 1. Validation Phase
+   * `nonce` validation and increment frame (required)
    * `sender` deployment frame (once per account)
    * `sender` validation frame (required)
    * `paymaster` validation frame (optional)
@@ -287,8 +289,10 @@ function validateTransaction(uint256 version, bytes32 txHash, bytes transaction)
 
 ```
 
-The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed`.
-The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.
+The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed`.\
+The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
+The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
+[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).\
 The `version` parameter is added in order to maintain the Solidity method ID in case of changes to this struct
 in future revisions of this EIP.
 
@@ -322,7 +326,9 @@ The gas limit of this frame is set to `paymasterGasLimit`.
 
 The amount of gas used by this frame is referred to as `paymasterValidationGasUsed`.
 
-The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.
+The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
+The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
+[Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).
 
 The frame must return a bytes array that is interpreted as:
 
@@ -342,7 +348,9 @@ The size of the `context` byte array may not exceed `MAX_CONTEXT_SIZE` for a tra
 
 The `sender` address is invoked with `callData` input.
 
-The gas limit of this frame is set to `callGasLimit`.
+The gas limit of this frame is set to `callGasLimit - calldataCost`.\
+Calculation of the `calldataCost` value is defined in the
+[Gas fees charged for transaction input](#gas-fees-charged-for-transaction-input) section.\
 The amount of gas used by this frame is referred to as `gasUsedByExecution`.
 
 The validation frames do not revert if the execution frame reverts.
@@ -350,7 +358,8 @@ The `postPaymasterTransaction` may still be called with a `success: false` flag.
 
 #### Paymaster post-transaction frame
 
-After the sender execution frame is over the `paymaster` may need to perform some kind of cleanup or bookkeeping.
+After the sender execution frame is over the `paymaster` may need to perform some post-transaction logic,
+for instance to perform some kind of cleanup or bookkeeping.
 If the gas payment validation returned a non-zero `context`, the `paymaster` is invoked again
 with the following inputs:
 
@@ -368,6 +377,13 @@ The gas limit of this frame is set to `paymasterGasLimit - paymasterValidationGa
 Revert in the `postPaymasterTransaction` frame reverts the transaction's execution frame as well.
 The validation frames do not revert if the `postPaymasterTransaction` frame reverts.
 The gas fees charged from the `paymaster` will still include the gas cost of the reverted execution frame.
+
+### Execution flow diagram
+
+The execution flow determined by an Account Abstraction Transaction is visualised by the following flow diagram:
+
+![](../assets/eip-00/flow_diagram.png)
+*Execution flow for the Native Account Abstraction Transactions*
 
 ### Execution layer transaction validation
 
@@ -464,6 +480,20 @@ A builder that chooses not to enforce the rules from EIP-9999 **must** take care
 against the mid-block state at the position where it is being included into a block.
 Otherwise, the resulting block is likely to end up being invalid.
 
+### Block structure diagram
+
+Here is a visual representation of a block that contains multiple Account Abstraction Transactions.
+The validation parts of AA transactions are executed as separate transactions,
+but are not represented as separate transactions in the block data.
+
+![](../assets/eip-00/block_overview.png)
+*The structure of a block containing multiple Native Account Abstraction Transactions*
+
+Zooming into a single transaction, the validation part of an AA transaction may include multiple exectution frames:
+
+![](../assets/eip-00/zoom_into_transaction.png)
+*Frames within a single Native Account Abstraction Transaction within a block*
+
 ### Validation state change virtual transactions
 
 The validation frames of the AA_TX_TYPE transaction are represented as individual virtual transactions by the clients.
@@ -511,6 +541,10 @@ keccak256(AA_TX_TYPE || 0x00 || rlp(transaction_payload)
 
 Note that the `chainId` and `accessList` parameters are included in the transaction hash calculation but are not
 available on-chain as part of the `TransactionType4` struct.
+
+In order to calculate the transaction hash that will be used during the signing of the transaction and validation of
+the transaction signature by the `sender`, the value of the `signature` parameter is considered to be an empty
+byte array.
 
 ### Accepting EOA account as `sender` to achieve native gas abstraction
 
@@ -572,7 +606,7 @@ for txIndex := 0; txIndex < range block.Transactions.Len(); txIndex++ {
         txIndex := j // transaction executed - no need to revisit in the outer loop
 
 
-        // 5. Run cleanups if necessary
+        // 5. Run paymaster's post-transaction logic if necessary
         if (context[j].Len() == 0){
           continue
         }
@@ -674,6 +708,9 @@ If any of the frames reverts the call returns the revert data of each reverted f
 
 Accepts Transaction Type `AA_TX_TYPE` with fields `validationGasLimit`, `paymasterGasLimit`, `callGasLimit` optional.
 
+Optionally accepts the State Override Set to allow users to modify the state during the gas estimation.
+This field as well as its behavior is equivalent to the ones defined for `eth_call` RPC method.
+
 Returns `{validationGasLimit, paymasterGasLimit, callGasLimit, builderFee}` object.
 
 Note that the `deployerData` and `paymasterData` fields are required for a consistent result.
@@ -681,6 +718,10 @@ Note that the `deployerData` and `paymasterData` fields are required for a consi
 As mentioned earlier, the `sender` and `paymaster` contracts should not revert on the validation failure
 and should return a value different from `MAGIC_VALUE_SENDER` or `MAGIC_VALUE_PAYMASTER` accordingly
 in order to enable gas estimation.
+
+One acceptable way to achieve this behavior for Smart Contract Accounts is to compare the `signature` parameter to
+a predetermined "dummy signature" and to return without reverting in case the values match.
+This will not result in transaction being authorized as long as returned value does not include `MAGIC_VALUE_SENDER`.
 
 ## Rationale
 
@@ -737,9 +778,6 @@ the ABI of the `paymaster` and `sender` contracts. This adapter can be set as a 
 
 The `sender` contracts MAY support both ERC-4337 and `AA_TX_TYPE` transactions during a transition period,
 as long as this EIP may be adopted by some chains and not by others.
-
-The participating RPC nodes MAY be able to handle the `eth_sendUserOperation` call and
-convert it into an `eth_sendTransaction` call if necessary.
 
 ## Security Considerations
 
