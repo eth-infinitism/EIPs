@@ -68,8 +68,8 @@ smart contracts. This, however, is impossible without an addition of Native Acco
 | AA_BASE_GAS_COST      | 15000                                                                           |
 | AA_ECRECOVER_COST     | 6000                                                                            |
 | VERSION               | 1                                                                               |
-| MAGIC_VALUE_SENDER    | 0xbf45c166  // keccak256("validateTransaction(uint256,bytes32,bytes)")          |
-| MAGIC_VALUE_PAYMASTER | 0xe0e6183a  // keccak256("validatePaymasterTransaction(uint256,bytes32,bytes)") |
+| MAGIC_VALUE_SENDER    | 0xbf45c166  // bytes4(keccak256("validateTransaction(uint256,bytes32,bytes)"))          |
+| MAGIC_VALUE_PAYMASTER | 0xe0e6183a  // bytes4(keccak256("validatePaymasterTransaction(uint256,bytes32,bytes)")) |
 | MAX_CONTEXT_SIZE      | 65536                                                                           |
 
 ### New Transaction Type
