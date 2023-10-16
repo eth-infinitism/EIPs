@@ -302,13 +302,16 @@ The frame must return 32 bytes `validationData` that is interpreted as:
 
 ```solidity
 
-abi.encodePacked(MAGIC_VALUE_SENDER, validBefore, validAfter)
+abi.encodePacked(MAGIC_VALUE_SENDER, validUntil, validAfter)
 
 ```
 
 In order to allow a gas estimation to determine the amount of gas that this frame
 requires to complete successfully while not having the actual `signature` value, this function
 should avoid reverting on invalid signature, and should return a value different from `MAGIC_VALUE_SENDER`.
+
+Type of the `validUntil` is 6-byte timestamp value, or zero for "infinite". The transaction is valid only up to this time.
+Type of the `validAfter` is 6-byte timestamp. The transaction is valid only after this time.
 
 The `validateTransaction` function can choose to revert on any condition that can be satisfied during gas estimation.
 
@@ -334,7 +337,7 @@ The frame must return a bytes array that is interpreted as:
 
 ```solidity
 
-abi.encode(context, MAGIC_VALUE_PAYMASTER, validBefore, validAfter)
+abi.encode(context, MAGIC_VALUE_PAYMASTER, validUntil, validAfter)
 
 ```
 
@@ -520,7 +523,7 @@ Gas refunds are issued at the end of the entire transaction only.
 
 ### Transaction validity time range parameters
 
-The `Paymaster validation frame` and the `Sender validation frame` each return values `validBefore` and `validAfter`.
+The `Paymaster validation frame` and the `Sender validation frame` each return values `validUntil` and `validAfter`.
 If the transaction is initiated by an EOA, these fields may be encoded into unused bits of the `nonce`.
 
 These values allow the `sender` and `paymaster` contracts to specify
@@ -529,7 +532,7 @@ a time range for the blocks the transaction will be valid for.
 Transaction cannot be included in a block outside of this time range.
 If included, such a block is considered invalid.
 
-Passing `validBefore = 0` and `validAfter = 0` disables the check.
+Passing `validUntil = 0` and `validAfter = 0` disables the check.
 
 ### Calculation of Transaction Type AA_TX_TYPE hash
 
