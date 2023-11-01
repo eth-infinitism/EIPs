@@ -71,6 +71,7 @@ smart contracts. This, however, is impossible without an addition of Native Acco
 | MAGIC_VALUE_SENDER    | 0xbf45c166  // bytes4(keccak256("validateTransaction(uint256,bytes32,bytes)"))          |
 | MAGIC_VALUE_PAYMASTER | 0xe0e6183a  // bytes4(keccak256("validatePaymasterTransaction(uint256,bytes32,bytes)")) |
 | MAX_CONTEXT_SIZE      | 65536                                                                           |
+| UNUSED_GAS_PENALTY    | 10                                                                              |
 
 ### New Transaction Type
 
@@ -95,6 +96,28 @@ ECDSA and signature.
 If `paymasterData` is specified, its first 20 bytes contain the address of a `paymaster` contract.
 
 If `deployerData` is specified, its first 20 bytes contain the address of a `deployer` contract.
+
+### No-op transaction subtype
+
+In some cases the block builders may want to split up an array of type `AA_TX_TYPE` transactions into individual
+batches of transactions that perform validations and executions separately.
+
+Without a no-op transaction type this would only be possible by creating an artificial legacy type transaction.
+Instead, we propose to introduce an explicit no-op transaction subtype. Their payload should be interpreted as:
+
+```
+0x04 || 0x01 || rlp([])
+```
+
+No-op transactions have a unique hash calculated as follows:
+
+```
+keccak256(AA_TX_TYPE || 0x00 || rlp(blockNumber, txIndex)
+```
+
+The no-op transactions are only used to help execution clients determine where one set of `AA_TX_TYPE` transactions
+ends and the next one starts. The block is not valid if a no-op transaction is located anywhere except between two
+of `AA_TX_TYPE` transactions, they do not affect blockchain state and do not cost any gas.
 
 ### Non-sequential nonce support
 
@@ -202,6 +225,21 @@ validation and is not linked to the gas price, the `sender` may decide
 to pay an extra `builderFee` as a "tip" to the block builder.
 
 This value is denominated in wei and is passed from the `sender` to the `coinbase` as part of the gas pre-charge.
+
+### Unused gas penalty charge
+
+Transactions of type `AA_TX_TYPE` that reserve a lot of gas for themselves using `validationGasLimit`,
+`paymasterGasLimit` and `callGasLimit` fields but do not use the reserved gas present a challenge for
+block builders. This is especially demanding in case a gas used by a transaction can be significantly different
+based on its position within a block, as such transactions may cause the block builder to iterate its algorithm
+many times until a fully utilized block is discovered.
+
+A penalty of `UNUSED_GAS_PENALTY` percent of the entire unused gas limit is charged from the
+transaction `sender` or `paymaster`.
+
+The total gas limit is calculated as `totalLimit = validationGasLimit + paymasterGasLimit + callGasLimit`.\
+The `totalGasUsed` is calculated as a sum of all gas used during the transaction.\
+The unused gas is calculated as `unusedGas = totalLimit - totalGasUsed`.
 
 ### Multiple execution frames for a single transaction
 
