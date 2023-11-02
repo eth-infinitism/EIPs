@@ -97,27 +97,34 @@ If `paymasterData` is specified, its first 20 bytes contain the address of a `pa
 
 If `deployerData` is specified, its first 20 bytes contain the address of a `deployer` contract.
 
-### No-op transaction subtype
+### Optional "transaction counter header"
 
 In some cases the block builders may want to split up an array of type `AA_TX_TYPE` transactions into individual
 batches of transactions that perform validations and executions separately.
 
-Without a no-op transaction type this would only be possible by creating an artificial legacy type transaction.
-Instead, we propose to introduce an explicit no-op transaction subtype. Their payload should be interpreted as:
+Without a header transaction type this would only be possible by creating an artificial legacy type transaction.
+Instead, we propose to introduce an explicit "counter" transaction subtype.
+
+Their payload should be interpreted as:
 
 ```
-0x04 || 0x01 || rlp([])
+0x04 || 0x01 || rlp([chainId, transactionCount])
 ```
 
-No-op transactions have a unique hash calculated as follows:
+Header transactions have a unique hash calculated as follows:
 
 ```
-keccak256(AA_TX_TYPE || 0x00 || rlp(blockNumber, txIndex)
+keccak256(AA_TX_TYPE || 0x00 || rlp(chainId, transactionCount, blockNumber, txIndex))
 ```
 
-The no-op transactions are only used to help execution clients determine where one set of `AA_TX_TYPE` transactions
-ends and the next one starts. The block is not valid if a no-op transaction is located anywhere except between two
-of `AA_TX_TYPE` transactions, they do not affect blockchain state and do not cost any gas.
+The `blockNumber` and `txIndex` parameters are added to the hash to achieve unique header transaction IDs.
+
+The header transactions are only used to help execution clients determine how many of the `AA_TX_TYPE` transactions
+belong to each individual batch.
+The block is not valid if a header transaction is located anywhere except before an `AA_TX_TYPE` transactions.\
+If a header transaction is included all `AA_TX_TYPE` transactions in the block must be covered by one.
+
+Header transactions do not affect blockchain state and do not cost any gas.
 
 ### Non-sequential nonce support
 
