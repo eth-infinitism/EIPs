@@ -417,7 +417,7 @@ func validateAccountAbstractionTransaction(tx *Transaction) {
     }
 
     if (paymasterData.length > 0) {
-        assert paymasterData.length > 20
+        assert paymasterData.length >= 20
         paymaster := paymasterData[0:20]
         paymasterInput := ABI.encodeWithSelector('validatePaymasterTransaction', tx, tx.hash)
         retPaymaster, error := evm.Call(
