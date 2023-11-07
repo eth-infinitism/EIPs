@@ -405,7 +405,7 @@ func validateAccountAbstractionTransaction(tx *Transaction) {
     }
 
     if (sender.code.length == 0 && deployerData.length > 0) {
-        assert deployerData.length > 20
+        assert deployerData.length >= 20
         deployer := deployerData[0:20]
         retDeployer, error := evm.Call(
             from: AA_SENDER_CREATOR,
