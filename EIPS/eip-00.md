@@ -219,9 +219,9 @@ charged for the `data` parameter.
 
 Transaction Type AA_TX_TYPE introduces the following dynamic length inputs: `callData`, `paymasterData`,
 `deployerData`, `signature`. Each of these parameters' gas cost is counted towards transaction data cost.
-This transaction data gas cost is referred to as `calldataCost` and is subtracted from the `callGasLimit`
+This transaction data gas cost is referred to as `calldataCost` and is subtracted from the `validationGasLimit`
 before execution of the transaction.
-The transaction is considered INVALID if `callGasLimit` is smaller than `calldataCost`.
+The transaction is considered INVALID if `validationGasLimit` is smaller than `calldataCost`.
 
 ### Builder Fee
 
@@ -334,7 +334,7 @@ function validateTransaction(uint256 version, bytes32 txHash, bytes transaction)
 
 ```
 
-The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed`.\
+The gas limit of this frame is set to `validationGasLimit - senderCreationGasUsed - calldataCost`.\
 The `transaction` parameter is interpreted as an ABI encoding of `TransactionType4`.\
 The `txHash` parameter represents the hash of the AA_TX_TYPE transaction with empty signature, as defined in section
 [Calculation of Transaction Type AA_TX_TYPE hash](#calculation-of-transaction-type-aatxtype-hash).\
@@ -396,7 +396,7 @@ The size of the `context` byte array may not exceed `MAX_CONTEXT_SIZE` for a tra
 
 The `sender` address is invoked with `callData` input.
 
-The gas limit of this frame is set to `callGasLimit - calldataCost`.\
+The gas limit of this frame is set to `callGasLimit`.\
 Calculation of the `calldataCost` value is defined in the
 [Gas fees charged for transaction input](#gas-fees-charged-for-transaction-input) section.\
 The amount of gas used by this frame is referred to as `gasUsedByExecution`.
@@ -452,11 +452,12 @@ func validateAccountAbstractionTransaction(tx *Transaction) {
     if (sender.code.length == 0 && deployerData.length > 0) {
         assert deployerData.length >= 20
         deployer := deployerData[0:20]
+        calldataCost := calculateCalldataCost(tx)
         retDeployer, error := evm.Call(
             from: AA_SENDER_CREATOR,
             to: deployer,
             input: deployerData[20:],
-            gas: validationGasLimit)
+            gas: validationGasLimit - calldataCost)
         assert error == nil
         assert sender.code.length > 0
     }
@@ -644,12 +645,11 @@ for txIndex := 0; txIndex < range block.Transactions.Len(); txIndex++ {
           break
         }
 
-        calldataCost := calculateCalldataCost(tx)
         retCall, error := evm.Call(
             from: AA_ENTRY_POINT,
             to: sender,
             input: callData,
-            gas: callGasLimit - calldataCost)
+            gas: callGasLimit)
 
         txIndex := j // transaction executed - no need to revisit in the outer loop
 
